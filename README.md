@@ -13,7 +13,7 @@ This gem is a fork that changes the original behaviour of Mongoid::Token:
 Instead of a custom field it changes the `_id` field by default.
 And you may still use tokens on custom fields.
 
-See nofxx's fork:  https://github.com/nofxx/mongoid-ids/tags
+See nofxx's fork:  https://github.com/nofxx/mongoid-ids
 
 
 ## Short snappy token ids for Mongoid documents
