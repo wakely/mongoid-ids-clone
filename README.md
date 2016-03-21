@@ -1,13 +1,26 @@
-# Mongoid::Token - Short snappy tokens for Mongoid documents
+Mongoid::Ids
+============
 
-[![Build Status](https://secure.travis-ci.org/thetron/mongoid_token.png)](http://travis-ci.org/thetron/mongoid_token)
-[![Code Climate](https://codeclimate.com/github/thetron/mongoid_token.png)](https://codeclimate.com/github/thetron/mongoid_token)
+[![Gem Version](https://badge.fury.io/rb/mongoid-ids.svg)](http://badge.fury.io/rb/mongoid-ids)
+[![Dependency Status](https://gemnasium.com/nofxx/mongoid-ids.svg)](https://gemnasium.com/nofxx/mongoid-ids)
+[![Build Status](https://secure.travis-ci.org/nofxx/mongoid-ids.svg)](http://travis-ci.org/nofxx/mongoid-ids)
+[![Code Climate](https://codeclimate.com/github/nofxx/mongoid-ids.svg)](https://codeclimate.com/github/nofxx/mongoid-ids)
+[![Coverage Status](https://coveralls.io/repos/nofxx/mongoid-ids/badge.svg)](https://coveralls.io/r/nofxx/mongoid-ids)
 
-This library is a quick and simple way to generate unique, random tokens
+## Mongoid::Token || Mongoid::Ids
+
+This gem is a fork that changes the original behaviour of Mongoid::Token:
+Instead of a custom field it changes the `_id` field by default.
+And you may still use tokens on custom fields.
+
+
+## Short snappy token ids for Mongoid documents
+
+This library is a quick and simple way to generate unique, random ids
 for your mongoid documents, in the cases where you can't, or don't want
 to use slugs, or the default MongoDB ObjectIDs.
 
-Mongoid::Token can help turn this:
+Mongoid::Ids can help turn this:
 
     http://bestappever.com/video/4dcfbb3c6a4f1d4c4a000012
 
@@ -20,19 +33,15 @@ Into something more like this:
 
 In your gemfile, add:
 
-    gem 'mongoid_token', '~> 2.0.0'
+    gem 'mongoid-ids'
 
-Then update your bundle
-
-    $ bundle update
-
-In your Mongoid documents, just add `include Mongoid::Token` and the
+In your Mongoid documents, just add `include Mongoid::Ids` and the
 `token` method will take care of all the setup, like so:
 
 ```ruby
 class Person
   include Mongoid::Document
-  include Mongoid::Token
+  include Mongoid::Ids
 
   field :name
 
@@ -45,40 +54,59 @@ And that's it! There's lots of configuration options too - which are all
 listed [below](#configuration). By default, the `token` method will
 create tokens 4 characters long, containing random alphanumeric characters.
 
-__Note:__ Mongoid::Token leverages Mongoid's 'safe mode' by
+**Notice: Every Mongoid overriding has been removed (#find and #to_param).**
+
+
+## Custom/Extra fields
+
+
+```ruby
+class Person
+  include Mongoid::Document
+  include Mongoid::Ids
+
+  field :name
+
+  token :code
+  token :token
+  token :other_code
+end
+
+```
+
+__Note on custom field:__ Mongoid::Ids leverages Mongoid's 'safe mode' by
 automatically creating a unique index on your documents using the token
 field. In order to take advantage of this feature (and ensure that your
 documents always have unique tokens) remember to create your indexes.
+Also, `Mongoid::Ids` will never override `to_param`.
 
 
 ## Finders
 
-By default, the gem will override the existing `find` method in Mongoid,
-in order to search for documents based on their token first (although
-the default behaviour of ObjectIDs is also there). You can disable these
-with the [`skip_finders` configuration option](#skip-finders-skip_finders).
+`Mongoid::Ids` will **never** override `find`.
+There's some helpers for custom fields:
 
 ```ruby
-Video.find("x3v98")
-Account.find("ACC-123456")
+Video.find_by_code("x3v98")
+Account.find_by_token("ACC-123456")
 ```
+
+You can disable these with the
+[`skip_finders` configuration option](#skip-finders-skip_finders).
 
 
 ## Configuration
 
-### Tokens
+You may choose between two different systems for how your tokens look:
 
-As of `Mongoid::Token` 2.0.0, you can now choose between two different
-systems for managing how your tokens look.
-
-For simple setup, you can use
-combination of the [`length`](#length-length) and [`contains`](#contains-contains), which modify the length and
-types of characters to use.
+For simple setup, you can use combination of the
+[`length`](#length-length) and [`contains`](#contains-contains),
+which modify the length and types of characters to use.
 
 For when you need to generate more complex tokens, you can use the
-[`pattern`](#patterns-pattern) option, which allows for very low-level control of the precise
-structure of your tokens, as well as allowing for static strings, like
-prefixes, infixes or suffixes.
+[`pattern`](#patterns-pattern) option, which allows for very low-level
+control of the precise structure of your tokens, as well as allowing
+for static strings, like prefixes, infixes or suffixes.
 
 #### Length (`:length`)
 
@@ -87,8 +115,8 @@ This one is easy, it's just an integer.
 __Example:__
 
 ```ruby
-token :length => 6 # Tokens are now of length 6
-token :length => 12 # Whow, whow, whow. Slow down egghead.
+token length: 8  # Tokens are now of length 8
+token length: 12 # Whow, whow, whow. Slow down egghead.
 ```
 
 You get the idea.
@@ -113,17 +141,16 @@ never start with zeros
 
 __Examples:__
 ```ruby
-token :contains => :alpha_upper, :length => 8
-token :contains => :fixed_numeric
+token contains: :alpha_upper, length: 8
+token contains: :fixed_numeric
 ```
 
 #### Patterns (`:pattern`)
 
-New in 2.0.0, patterns allow you fine-grained control over how your
-tokens look. It's great for generating random data that has a
-requirements to also have some basic structure. If you use the
-`:pattern` option, it will override both the `:length` and `:contains`
-options.
+Patterns allow you fine-grained control over how your tokens look.
+It's great for generating random data that has a requirements to
+also have some basic structure. If you use the `:pattern` option,
+it will override both the `:length` and `:contains` options.
 
 This was designed to operate in a similar way to something like `strftime`,
 if the syntax offends you - please open an issue, I'd love to get some
@@ -143,7 +170,7 @@ generated character, and are as follows:
 __Example:__
 
 ```ruby
-token :pattern => "PRE-%C%C-%d%d%d%d" # Generates something like: 'PRE-ND-3485'
+token pattern: "PRE-%C%C-%d%d%d%d" # Generates something like: 'PRE-ND-3485'
 ```
 
 You can also add a repetition modifier, which can help improve readability on
@@ -152,20 +179,19 @@ more complex patterns. You simply add any integer after the letter.
 __Examples:__
 
 ```ruby
-token :pattern => "APP-%d6" # Generates something like; "APP-638924"
+token pattern: "APP-%d6" # Generates something like; "APP-638924"
 ```
 
-### Field Name (`:field_name`)
+### Field Name
 
-This allows you to change the field name used by `Mongoid::Token`
-(default is `:token`). This is particularly handy when you're wanting to
-use multiple tokens one a single document.
+This allows you to change the field name used by `Mongoid::Ids`
+This is particularly handy to use multiple tokens one a single document.
 
 __Examples:__
 ```ruby
-token :length => 6
-token :field_name => :sharing_token, :length => 12
-token :field_name => :yet_another
+token length: 6
+token :sharing_token, length: 12
+token :yet_another
 ```
 
 
@@ -176,46 +202,42 @@ overrides for the default `find` behaviour used by Mongoid.
 
 __Example:__
 ```ruby
-token :skip_finders => true
-```
-
-
-### Override to_param (`:override_to_param`)
-
-By default, `Mongoid::Token` will override to_param, to make it an easy
-drop-in replacement for the default ObjectIDs. If needed, you can turn
-this behaviour off:
-
-__Example:__
-```ruby
-token :override_to_param => false
+token skip_finders: true
 ```
 
 
 ### Retry Count (`:retry_count`)
 
 In the event of a token collision, this gem will attempt to try three
-more times before raising a `Mongoid::Token::CollisionRetriesExceeded`
+more times before raising a `Mongoid::Ids::CollisionRetriesExceeded`
 error. If you're wanting it to try harder, or less hard, then this
 option is for you.
 
 __Examples:__
 ```ruby
-token :retry_count => 9
-token :retry_count => 0
+token retry_count: 9
+token retry_count: 0
 ```
 
 # Notes
 
-If you find a problem, please [submit an issue](http://github.com/thetron/mongoid_token/issues) (and a failing test, if
-you can). Pull requests and feature requests are always welcome and
-greatly appreciated.
+This gem just changes the Mongoid::Token behaviour, which is found at:
+
+http://github.com/thetron/mongoid_token
+
+If you find a problem, please
+[submit an issue](http://github.com/nofxx/mongoid-ids/issues)
+(and a failing test, if you can).
+
+Pull requests and feature requests are always welcome and greatly appreciated.
+
+Test matrix: Mongoid 4 & 5.
 
 Thanks to everyone that has contributed to this gem over the past year.
 Many, many thanks - you guys rawk.
 
 
-## Contributors:
+## Mongoid::Token Contributors:
 
 Thanks to everyone who has provided support for this gem over the years.
 In particular: [olliem](https://github.com/olliem),

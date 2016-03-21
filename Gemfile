@@ -1,10 +1,13 @@
-source "http://rubygems.org"
+source 'http://rubygems.org'
 
 gemspec
 
 group :test do
-  gem 'rspec', '2.14.1'
-  gem "codeclimate-test-reporter", require: nil
-  gem 'database_cleaner'
-  gem 'mongoid-rspec', '1.5.1'
+  gem 'guard'
+  gem 'rubocop'
+  gem 'guard-rspec'
+  gem 'guard-rubocop'
+  gem 'rspec', '>= 3.2.0'
+  gem 'codeclimate-test-reporter', require: nil
+  gem 'mongoid-rspec', git: 'https://github.com/nofxx/mongoid-rspec'
 end
